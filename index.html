@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Concepteur d'Entrepôt</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
+      #controls {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(255, 255, 255, 0.85);
+        padding: 15px;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        max-width: 300px;
+        z-index: 100;
+      }
+      .button {
+        margin: 5px;
+        padding: 8px 12px;
+        background: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+      .button:hover {
+        background: #45a049;
+      }
+      #blueprintEditor {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #f0f0f0;
+      }
+      #threeD-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: none;
+      }
+      .phase-title {
+        text-align: center;
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: #333;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 10px;
+      }
+      .section {
+        margin-bottom: 15px;
+      }
+      #blueprintCanvas {
+        background: white;
+        cursor: crosshair;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      }
+      #switch-to-3d {
+        background: #2196f3;
+      }
+      #switch-to-3d:hover {
+        background: #0b7dda;
+      }
+      #switch-to-blueprint {
+        background: #ff9800;
+      }
+      #switch-to-blueprint:hover {
+        background: #e68a00;
+      }
+      .tool-selected {
+        background: #2e7d32 !important;
+        font-weight: bold;
+      }
+      #itemsList {
+        display: none;
+      }
+      #objectControls {
+        display: none;
+        margin-top: 10px;
+      }
+      .control-group {
+        margin-bottom: 10px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="blueprintEditor">
+      <canvas id="blueprintCanvas"></canvas>
+      <div id="controls">
+        <h2 class="phase-title">Création du Blueprint</h2>
+
+        <div class="section">
+          <h3>Outils de dessin</h3>
+          <button id="wall-tool" class="button tool">Mur</button>
+          <button id="door-tool" class="button tool">Porte</button>
+          <button id="window-tool" class="button tool">Fenêtre</button>
+          <button id="column-tool" class="button tool">Colonne</button>
+        </div>
+
+        <div class="section">
+          <h3>Actions</h3>
+          <button id="clear-blueprint" class="button">Effacer tout</button>
+          <button id="save-blueprint" class="button">Sauvegarder</button>
+          <button id="load-blueprint" class="button">Charger</button>
+          <input
+            type="file"
+            id="blueprint-file-input"
+            style="display: none"
+            accept=".json"
+          />
+        </div>
+
+        <div class="section">
+          <button id="switch-to-3d" class="button">Passer en 3D</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="threeD-container">
+      <div id="controls">
+        <h2 class="phase-title">Visualisation 3D</h2>
+
+        <div class="section">
+          <button id="switch-to-blueprint" class="button">
+            Retour au Blueprint
+          </button>
+        </div>
+
+        <div id="itemsList" class="section">
+          <h3>Ajouter un objet</h3>
+          <button class="button" data-item="pallet">Palette</button>
+          <button class="button" data-item="rack">Étagère</button>
+          <button class="button" data-item="forklift">Chariot élévateur</button>
+          <button class="button" data-item="box">Carton</button>
+          <button class="button" data-item="barrel">Fût</button>
+        </div>
+
+        <!-- Ajoutez ces lignes dans la section objectControls -->
+
+        <div id="objectControls">
+          <h3>Contrôles de l'objet</h3>
+          <div class="control-group">
+            <button id="deleteObject" class="button">Supprimer</button>
+          </div>
+          <div class="control-group">
+            <label>Échelle:</label>
+            <input
+              type="range"
+              id="scaleSlider"
+              min="0.1"
+              max="5"
+              step="0.1"
+              value="1"
+            />
+          </div>
+          <div class="control-group">
+            <label>Rotation Y:</label>
+            <input
+              type="range"
+              id="rotationSlider"
+              min="0"
+              max="360"
+              step="1"
+              value="0"
+            />
+          </div>
+          <div class="control-group">
+            <label>Hauteur:</label>
+            <input
+              type="range"
+              id="heightSlider"
+              min="0"
+              max="5"
+              step="0.1"
+              value="0"
+            />
+          </div>
+          <!-- Nouveaux contrôles de position X/Z -->
+          <div class="control-group">
+            <label>Position X:</label>
+            <input
+              type="range"
+              id="positionXSlider"
+              min="-50"
+              max="50"
+              step="0.5"
+              value="0"
+            />
+          </div>
+          <div class="control-group">
+            <label>Position Z:</label>
+            <input
+              type="range"
+              id="positionZSlider"
+              min="-50"
+              max="50"
+              step="0.5"
+              value="0"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="blueprint.js"></script>
+    <script src="3dview.js"></script>
+    <script src="app.js"></script>
+
+  </body>
+</html>
