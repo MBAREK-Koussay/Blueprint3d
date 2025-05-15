@@ -34526,6 +34526,7 @@ THREE.ShadowMapPlugin = function ( _renderer, _lights, _webglObjects, _webglObje
 
 						gyro.add( virtualLight );
 						gyro.add( virtualLight.target );
+						
 
 						camera.add( gyro );
 
