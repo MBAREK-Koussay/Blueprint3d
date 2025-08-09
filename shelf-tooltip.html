@@ -1,0 +1,72 @@
+<!-- Add this to your existing HTML file where the tools are defined -->
+<style>
+    .tool {
+        position: relative;
+        display: inline-block;
+    }
+
+    .tool .tooltip {
+        visibility: hidden;
+        width: 200px;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        text-align: left;
+        padding: 10px;
+        border-radius: 6px;
+        position: absolute;
+        z-index: 1;
+        left: 110%;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .tool:hover .tooltip {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    .shelf-specs {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .shelf-specs li {
+        margin-bottom: 5px;
+    }
+    
+    /* Add arrow pointing to the tool */
+    .tool .tooltip::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        right: 100%;
+        margin-top: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: transparent rgba(0, 0, 0, 0.8) transparent transparent;
+    }
+</style>
+
+<!-- Add this button to your tools section -->
+<button id="shelf-tool" class="button tool">
+    <span>Étagère</span>
+    <div class="tooltip">
+        <h4 style="margin-top: 0;">Étagère Industrielle</h4>
+        <ul class="shelf-specs">
+            <li>📏 Largeur: 2.8m</li>
+            <li>📐 Hauteur: 4.0m</li>
+            <li>↔️ Profondeur: 1.2m</li>
+            <li>⚖️ Capacité: 1000kg/niveau</li>
+            <li>🔧 Niveaux: 3</li>
+        </ul>
+    </div>
+</button>
+
+<!-- Add this to the show-dimensions section if you have one -->
+<div class="control-group">
+    <input type="checkbox" id="show-dimensions" checked>
+    <label for="show-dimensions">Afficher les dimensions</label>
+</div>

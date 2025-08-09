@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WMS 3D Viewer</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // 📦 Exemple de réponse d'une API externe
+    const apiData = {
+      racks: [
+        { x: 0, y: 0, z: 0, width: 2, height: 3, depth: 1 },
+        { x: 5, y: 0, z: 0, width: 2, height: 4, depth: 1 },
+        { x: 10, y: 0, z: 0, width: 2, height: 3, depth: 1 },
+      ]
+    };
+
+    // 🧱 Init scène
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // 🌞 Lumière
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(10, 10, 10);
+    scene.add(light);
+
+    // 🔄 Créer les racks depuis les données API
+    apiData.racks.forEach(rack => {
+      const geometry = new THREE.BoxGeometry(rack.width, rack.height, rack.depth);
+      const material = new THREE.MeshStandardMaterial({ color: 0x0077ff });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(rack.x, rack.height / 2, rack.z);
+      scene.add(mesh);
+    });
+
+    // 📷 Caméra positionnée
+    camera.position.set(10, 5, 15);
+    camera.lookAt(5, 0, 0);
+
+    // 🎬 Animation
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>

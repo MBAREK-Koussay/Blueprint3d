@@ -1,0 +1,42 @@
+/* Styles pour le tooltip 3D */
+#tooltip3D {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    display: none;
+    z-index: 1000;
+    font-size: 14px;
+    max-width: 250px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    pointer-events: none; /* Pour que le tooltip n'interfère pas avec les clics */
+    transition: opacity 0.3s;
+}
+
+.tooltip3D-title {
+    margin: 0 0 5px 0;
+    font-weight: bold;
+    font-size: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    padding-bottom: 5px;
+}
+
+.tooltip3D-content {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.tooltip3D-content li {
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+}
+
+.tooltip3D-icon {
+    margin-right: 5px;
+    display: inline-block;
+    width: 20px;
+    text-align: center;
+}
