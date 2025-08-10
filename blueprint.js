@@ -22,7 +22,9 @@ const BlueprintEditor = (function() {
         column: { color: '#666', thickness: 4 },
         shelf: { color: '#4A4A4A', thickness: 3 },
         pallet: { color: '#B5651D', thickness: 2, size: { w: 1.2, d: 0.8 } },
-        forklift: { color: '#FFB300', thickness: 2, size: { w: 2.5, d: 1.0 } }
+        forklift: { color: '#FFB300', thickness: 2, size: { w: 2.5, d: 1.0 } },
+        sensor: { color: '#28a6ff', thickness: 2 },
+        zone: { color: '#7a3dff33', border: '#7a3dff', thickness: 2 }
     };
 
     // Calculate distance between two points
@@ -101,18 +103,14 @@ const BlueprintEditor = (function() {
 
     // Hit test for elements (returns index or -1)
     function hitTest(x, y) {
-        // Check items (rectangles): shelf, pallet, forklift
         for (let i = elements.length - 1; i >= 0; i--) {
             const el = elements[i];
-            if (el.type === 'shelf' || el.type === 'pallet' || el.type === 'forklift') {
-                if (x >= el.x && x <= el.x + el.width && y >= el.y && y <= el.y + el.depth) {
-                    return i;
-                }
-            } else if (el.type === 'column') {
+            if (el.type === 'shelf' || el.type === 'pallet' || el.type === 'forklift' || el.type === 'zone') {
+                if (x >= el.x && x <= el.x + el.width && y >= el.y && y <= el.y + el.depth) return i;
+            } else if (el.type === 'column' || el.type === 'sensor') {
                 const r = el.radius;
                 if (calculateDistance(x, y, el.x, el.y) <= r) return i;
             } else {
-                // line (wall/door/window) - simple bbox hit test
                 const minX = Math.min(el.x1, el.x2) - 5;
                 const maxX = Math.max(el.x1, el.x2) + 5;
                 const minY = Math.min(el.y1, el.y2) - 5;
@@ -169,9 +167,14 @@ const BlueprintEditor = (function() {
 
     function formatElementInfo(el) {
         if (!el) return '';
-        // Common dimension helpers
         const mW = (pixelsToMeters(el.width || 0)).toFixed(2);
         const mD = (pixelsToMeters(el.depth || 0)).toFixed(2);
+        if (el.type === 'sensor') {
+            return `<strong>Capteur ${el.sensorType || ''}</strong><br/>Portée: ${(pixelsToMeters(el.radius)).toFixed(2)} m<br/>Nom: ${el.name||''}`;
+        }
+        if (el.type === 'zone') {
+            return `<strong>Zone</strong><br/>Nom: ${el.name||''}<br/>${mW}m x ${mD}m`;
+        }
         if (el.type === 'shelf') {
             // Replicate sidebar tooltip style
             return `<h4 style="margin:0 0 4px 0;font-size:13px;">Étagère Industrielle</h4>
@@ -208,10 +211,10 @@ const BlueprintEditor = (function() {
 
         if (isDragging && selectedElementIndex !== -1) {
             const el = elements[selectedElementIndex];
-            if (el.type === 'shelf' || el.type === 'pallet' || el.type === 'forklift') {
+            if (el.type === 'shelf' || el.type === 'pallet' || el.type === 'forklift' || el.type === 'zone') {
                 el.x = x - dragOffsetX;
                 el.y = y - dragOffsetY;
-            } else if (el.type === 'column') {
+            } else if (el.type === 'column' || el.type === 'sensor') {
                 el.x = x - dragOffsetX;
                 el.y = y - dragOffsetY;
             } else {
@@ -287,6 +290,27 @@ const BlueprintEditor = (function() {
                 drawDimensionLabel(startX, startY, startX + width, startY, 'Largeur: ');
                 drawDimensionLabel(startX, startY, startX, startY + depth, 'Profondeur: ');
             }
+        } else if (currentTool === 'zone') {
+            const width = x - startX;
+            const depth = y - startY;
+            ctx.strokeStyle = elementTypes.zone.border;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6,4]);
+            ctx.strokeRect(startX, startY, width, depth);
+            ctx.setLineDash([]);
+            ctx.fillStyle = elementTypes.zone.color;
+            ctx.fillRect(startX, startY, width, depth);
+            if (showDims) {
+                drawDimensionLabel(startX, startY, startX + width, startY, 'Largeur: ');
+                drawDimensionLabel(startX, startY, startX, startY + depth, 'Profondeur: ');
+            }
+        } else if (currentTool === 'sensor') {
+            const radius = gridSize; // preview radius
+            ctx.strokeStyle = elementTypes.sensor.color;
+            ctx.beginPath();
+            ctx.arc(startX, startY, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            if (showDims) drawDimensionLabel(startX, startY, startX + radius, startY, 'Portée: ');
         } else {
             ctx.moveTo(startX, startY);
             ctx.lineTo(x, y);
@@ -325,6 +349,16 @@ const BlueprintEditor = (function() {
         } else if (currentTool === 'forklift') {
             elements.push({ type: 'forklift', x: startX, y: startY, width: elementTypes.forklift.size.w * gridSize, depth: elementTypes.forklift.size.d * gridSize, _configured:false });
             selectedElementIndex = elements.length -1;
+        } else if (currentTool === 'sensor') {
+            elements.push({ type:'sensor', x:startX, y:startY, radius: gridSize, name:'Capteur', sensorType:'temp', _configured:false });
+            selectedElementIndex = elements.length -1;
+        } else if (currentTool === 'zone') {
+            if (startX !== endX || startY !== endY) {
+                const width = endX - startX;
+                const depth = endY - startY;
+                elements.push({ type:'zone', x:startX, y:startY, width, depth, name:'Zone', color: elementTypes.zone.color, _configured:false });
+                selectedElementIndex = elements.length -1;
+            }
         } else {
             if (startX !== endX || startY !== endY) {
                 elements.push({ type: currentTool, x1: startX, y1: startY, x2: endX, y2: endY, _configured:false });
@@ -365,8 +399,32 @@ const BlueprintEditor = (function() {
             ctx.beginPath();
             const isSelected = idx === selectedElementIndex;
             const isHover = idx === hoverElementIndex && !isDrawing && !isDragging;
-
-            if (el.type === 'column') {
+            if (el.type === 'sensor') {
+                ctx.strokeStyle = elementTypes.sensor.color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(el.x, el.y, el.radius, 0, Math.PI*2);
+                ctx.stroke();
+                ctx.fillStyle = elementTypes.sensor.color;
+                ctx.beginPath();
+                ctx.arc(el.x, el.y, 4, 0, Math.PI*2);
+                ctx.fill();
+                if (showDims) drawDimensionLabel(el.x, el.y, el.x + el.radius, el.y, 'Portée: ');
+                if (isSelected) drawSelection(el.x - el.radius, el.y - el.radius, el.radius*2, el.radius*2);
+            } else if (el.type === 'zone') {
+                ctx.save();
+                ctx.fillStyle = el.color || elementTypes.zone.color;
+                ctx.strokeStyle = elementTypes.zone.border;
+                ctx.lineWidth = 2;
+                ctx.fillRect(el.x, el.y, el.width, el.depth);
+                ctx.strokeRect(el.x, el.y, el.width, el.depth);
+                ctx.restore();
+                if (showDims) {
+                    drawDimensionLabel(el.x, el.y, el.x + el.width, el.y, 'Largeur: ');
+                    drawDimensionLabel(el.x, el.y, el.x, el.y + el.depth, 'Profondeur: ');
+                }
+                if (isSelected) drawSelection(el.x, el.y, el.width, el.depth);
+            } else if (el.type === 'column') {
                 ctx.fillStyle = elementTypes.column.color;
                 ctx.arc(el.x, el.y, el.radius, 0, 2 * Math.PI);
                 ctx.fill();
@@ -407,8 +465,11 @@ const BlueprintEditor = (function() {
             }
             // After drawing shape, optional hover outline
             if (isHover && !isSelected) {
-                // Determine bounds
-                if (el.type === 'column') {
+                if (el.type === 'sensor') {
+                    drawSelection(el.x - el.radius, el.y - el.radius, el.radius*2, el.radius*2);
+                } else if (el.type === 'zone') {
+                    drawSelection(el.x, el.y, el.width, el.depth);
+                } else if (el.type === 'column') {
                     drawSelection(el.x - el.radius, el.y - el.radius, el.radius * 2, el.radius * 2);
                 } else if (el.width !== undefined) {
                     drawSelection(el.x, el.y, el.width, el.depth);
@@ -477,13 +538,30 @@ const BlueprintEditor = (function() {
         if(!panel) return;
         panel.style.display='block';
         ui('prop-type-label').textContent = 'Type: ' + el.type;
-        // Hide all groups first
-        ['prop-group-width','prop-group-depth','prop-group-radius','prop-group-length','prop-group-height','prop-group-levels','prop-group-capacity']
+        ['prop-group-width','prop-group-depth','prop-group-radius','prop-group-length','prop-group-height','prop-group-levels','prop-group-capacity','prop-group-name','prop-group-sensortype','prop-group-range','prop-group-color']
             .forEach(id=> show(ui(id), false));
-        // Populate values depending on type
-        if(el.type === 'shelf' || el.type === 'pallet' || el.type === 'forklift') {
+        if(el.type === 'sensor') {
+            show(ui('prop-group-name'), true);
+            show(ui('prop-group-sensortype'), true);
+            show(ui('prop-group-range'), true);
+            ui('prop-name').value = el.name || '';
+            ui('prop-sensortype').value = el.sensorType || 'temp';
+            ui('prop-range').value = pixelsToMeters(el.radius).toFixed(2);
+        } else if(el.type === 'zone') {
+            show(ui('prop-group-name'), true);
             show(ui('prop-group-width'), true);
             show(ui('prop-group-depth'), true);
+            show(ui('prop-group-color'), true);
+            ui('prop-name').value = el.name || '';
+            ui('prop-width').value = (pixelsToMeters(el.width)).toFixed(2);
+            ui('prop-depth').value = (pixelsToMeters(el.depth)).toFixed(2);
+            ui('prop-color').value = el.rawColor || '#7a3dff';
+        } else if(el.type === 'shelf' || el.type === 'pallet' || el.type === 'forklift') {
+            show(ui('prop-group-width'), true);
+            show(ui('prop-group-depth'), true);
+            ui('prop-group-height'), true;
+            show(ui('prop-group-levels'), true);
+            show(ui('prop-group-capacity'), true);
             ui('prop-width').value = (pixelsToMeters(el.width)).toFixed(2);
             ui('prop-depth').value = (pixelsToMeters(el.depth)).toFixed(2);
             if(el.type === 'shelf') {
@@ -510,7 +588,16 @@ const BlueprintEditor = (function() {
         if(selectedElementIndex === -1) return;
         const el = elements[selectedElementIndex];
         try {
-            if(el.type === 'shelf' || el.type === 'pallet' || el.type === 'forklift') {
+            if(el.type === 'sensor') {
+                const nm = ui('prop-name').value.trim(); if(nm) el.name = nm;
+                const st = ui('prop-sensortype').value.trim(); if(st) el.sensorType = st;
+                const rg = parseFloat(ui('prop-range').value); if(!isNaN(rg) && rg>0) el.radius = metersToPixels(rg);
+            } else if(el.type === 'zone') {
+                const nm = ui('prop-name').value.trim(); if(nm) el.name = nm;
+                const w = parseFloat(ui('prop-width').value); if(!isNaN(w) && w>0) el.width = metersToPixels(w);
+                const d = parseFloat(ui('prop-depth').value); if(!isNaN(d) && d>0) el.depth = metersToPixels(d);
+                const col = ui('prop-color').value; if(col){ el.rawColor = col; el.color = col + '33'; }
+            } else if(el.type === 'shelf' || el.type === 'pallet' || el.type === 'forklift') {
                 const w = parseFloat(ui('prop-width').value);
                 const d = parseFloat(ui('prop-depth').value);
                 if(!isNaN(w) && w>0){ el.width = metersToPixels(w); }
@@ -564,12 +651,16 @@ const BlueprintEditor = (function() {
 
     function editElementPrompts(el){
         if(!el) return;
-        // Do not prompt for walls
         if(el.type === 'wall') { el._configured = true; return; }
-        // Only prompt if not already configured (first time)
         if(el._configured) return;
         try {
-            if(el.type === 'shelf' || el.type === 'pallet' || el.type === 'forklift') {
+            if(el.type === 'sensor') {
+                let nameStr = prompt('Nom du capteur', el.name || 'Capteur'); if(nameStr) el.name = nameStr;
+                let typeStr = prompt('Type (temp, humidité, rfid, camera)', el.sensorType || 'temp'); if(typeStr) el.sensorType = typeStr;
+                let rangeStr = prompt('Portée (m)', (pixelsToMeters(el.radius)).toFixed(2)); if(rangeStr){ const rg=parseFloat(rangeStr); if(!isNaN(rg)&&rg>0) el.radius = metersToPixels(rg); }
+            } else if(el.type === 'zone') {
+                let nameStr = prompt('Nom de la zone', el.name||'Zone'); if(nameStr) el.name = nameStr;
+            } else if(el.type === 'shelf' || el.type === 'pallet' || el.type === 'forklift') {
                 const currentW = pixelsToMeters(el.width || 0).toFixed(2);
                 const currentD = pixelsToMeters(el.depth || 0).toFixed(2);
                 let wStr = prompt('Largeur (m)', currentW); if(wStr === null) { el._configured = true; redraw(); return; }

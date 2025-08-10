@@ -210,6 +210,8 @@
               2.5m x 1.0m (emprise)
             </div>
           </button>
+          <button id="sensor-tool" class="button tool">Capteur</button>
+          <button id="zone-tool" class="button tool">Zone</button>
         </div>
 
         <div class="section">
@@ -324,7 +326,7 @@
           </div>
         </div>
 
-        <div class="section" id="elementProperties" style="display:none; margin-top:10px; border:1px solid #ccc; padding:8px; background:#fafafa;">
+        <div class="section" id="elementProperties" style="display:none;">
           <strong id="prop-type-label">Type:</strong>
           <div id="prop-group-width"><label>Largeur (m): <input type="number" step="0.01" id="prop-width"></label></div>
           <div id="prop-group-depth"><label>Profondeur (m): <input type="number" step="0.01" id="prop-depth"></label></div>
@@ -333,10 +335,14 @@
           <div id="prop-group-height"><label>Hauteur (m): <input type="number" step="0.01" id="prop-height"></label></div>
           <div id="prop-group-levels"><label>Niveaux: <input type="number" step="1" id="prop-levels"></label></div>
           <div id="prop-group-capacity"><label>Capacité (kg): <input type="number" step="1" id="prop-capacity"></label></div>
-          <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
-            <button id="prop-apply">Appliquer</button>
-            <button id="prop-cancel" type="button">Annuler</button>
-            <button id="prop-delete" type="button" style="background:#c62828; color:#fff;">Supprimer</button>
+          <div id="prop-group-name" style="display:none;"><label>Nom: <input type="text" id="prop-name" /></label></div>
+          <div id="prop-group-sensortype" style="display:none;"><label>Type capteur: <input type="text" id="prop-sensortype" placeholder="temp" /></label></div>
+          <div id="prop-group-range" style="display:none;"><label>Portée (m): <input type="number" step="0.1" id="prop-range" /></label></div>
+          <div id="prop-group-color" style="display:none;"><label>Couleur zone: <input type="color" id="prop-color" value="#7a3dff" /></label></div>
+          <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+            <button id="prop-apply" class="button" style="background:#2d6fe3; border-color:#2d6fe3;">Appliquer</button>
+            <button id="prop-cancel" type="button" class="button secondary" style="background:#303a49; border-color:#303a49;">Annuler</button>
+            <button id="prop-delete" type="button" class="button danger" style="flex:1;">Supprimer</button>
           </div>
         </div>
       </div>
